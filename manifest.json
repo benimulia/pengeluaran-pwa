@@ -54,6 +54,7 @@
     }
   ],
   "start_url": "/pengeluaran-pwa/",
+  "scope": "/pengeluaran-pwa/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#000000"
