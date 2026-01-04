@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Catatan Pengeluaran</title>
+
+  <!-- PWA -->
+  <meta name="theme-color" content="#0f172a" />
+  <link rel="manifest" href="manifest.json" />
+
+  <!-- Favicon -->
+  <link rel="icon" href="icons/icon-192.png" />
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      margin: 0;
+      background: #f8fafc;
+      color: #0f172a;
+    }
+
+    header {
+      background: #0f172a;
+      color: white;
+      padding: 1rem;
+      text-align: center;
+    }
+
+    main {
+      padding: 1rem;
+      max-width: 480px;
+      margin: auto;
+    }
+
+    h2 { margin-top: 1.5rem; }
+
+    form {
+      background: white;
+      padding: 1rem;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.05);
+    }
+
+    label {
+      display: block;
+      font-size: .9rem;
+      margin-top: .75rem;
+    }
+
+    input, select, textarea, button {
+      width: 100%;
+      margin-top: .25rem;
+      padding: .6rem;
+      border-radius: 8px;
+      border: 1px solid #cbd5f5;
+      font-size: 1rem;
+    }
+
+    textarea { resize: vertical; }
+
+    button {
+      margin-top: 1rem;
+      background: #2563eb;
+      color: white;
+      border: none;
+    }
+
+    button.danger { background: #dc2626; }
+
+    ul { list-style: none; padding: 0; }
+
+    li {
+      background: white;
+      margin-top: .75rem;
+      padding: .75rem;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,.05);
+    }
+
+    .row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: .5rem;
+    }
+
+    .small {
+      font-size: .8rem;
+      color: #475569;
+    }
+
+    .delete {
+      background: none;
+      border: none;
+      color: #dc2626;
+      font-size: .9rem;
+      padding: 0;
+      margin-top: .25rem;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>💸 Catatan Pengeluaran</h1>
+    <div class="small">Data tersimpan lokal (offline)</div>
+  </header>
+
+  <main>
+    <form id="expenseForm">
+      <label>Tanggal
+        <input type="date" id="date" required />
+      </label>
+
+      <label>Kategori
+        <select id="category" required>
+          <option value="">-- Pilih --</option>
+          <option value="Makan">Makan</option>
+          <option value="Tempat Tinggal">Tempat Tinggal</option>
+          <option value="Transportasi">Transportasi</option>
+          <option value="Kesehatan & Kebugaran">Kesehatan & Kebugaran</option>
+          <option value="Pribadi">Pribadi</option>
+          <option value="Hiburan & Sosial">Hiburan & Sosial</option>
+          <option value="Darurat / Lain-lain">Darurat / Lain-lain</option>
+        </select>
+      </label>
+
+      <label>Jumlah (Rp)
+        <input type="number" id="amount" required />
+      </label>
+
+      <label>Deskripsi
+        <textarea id="desc" placeholder="Opsional"></textarea>
+      </label>
+
+      <button type="submit">Simpan</button>
+    </form>
+
+    <h2>Total Pengeluaran</h2>
+    <ul>
+      <li>
+        <div class="row">
+          <strong>Semua Kategori</strong>
+          <span id="grandTotal">Rp 0</span>
+        </div>
+      </li>
+    </ul>
+
+    <h2>Ringkasan per Kategori</h2>
+    <ul id="summary"></ul>
+
+    <h2>Daftar Pengeluaran</h2>
+    <button class="danger" id="clearAll" type="button">
+      Hapus Semua Data
+    </button>
+    <ul id="list"></ul>
+
+    
+  </main>
+
+  <script>
+    const KEY = 'expenses-v1';
+
+    const form = document.getElementById('expenseForm');
+    const list = document.getElementById('list');
+    const summary = document.getElementById('summary');
+    const clearAllBtn = document.getElementById('clearAll');
+    const grandTotalEl = document.getElementById('grandTotal');
+
+    function load() {
+      return JSON.parse(localStorage.getItem(KEY) || '[]');
+    }
+
+    function save(data) {
+      localStorage.setItem(KEY, JSON.stringify(data));
+    }
+
+    function render() {
+      const data = load();
+      list.innerHTML = '';
+      summary.innerHTML = '';
+
+      let grandTotal = 0;
+      const totals = {};
+
+      data.forEach(e => {
+        const amount = Number(e.amount) || 0;
+        totals[e.category] = (totals[e.category] || 0) + amount;
+        grandTotal += amount;
+      });
+
+      grandTotalEl.textContent =
+        'Rp ' + grandTotal.toLocaleString('id-ID');
+
+      Object.keys(totals).forEach(cat => {
+        const li = document.createElement('li');
+        li.innerHTML = `
+          <div class="row">
+            <strong>${cat}</strong>
+            <span>Rp ${totals[cat].toLocaleString('id-ID')}</span>
+          </div>
+        `;
+        summary.appendChild(li);
+      });
+
+      data.forEach((e, i) => {
+        const li = document.createElement('li');
+        li.innerHTML = `
+          <div class="row">
+            <strong>${e.category}</strong>
+            <span>Rp ${Number(e.amount).toLocaleString('id-ID')}</span>
+          </div>
+          <div class="small">${e.date} • ${e.desc || '-'}</div>
+          <button class="delete" onclick="del(${i})">Hapus</button>
+        `;
+        list.appendChild(li);
+      });
+    }
+
+    window.del = function(i) {
+      const data = load();
+      data.splice(i, 1);
+      save(data);
+      render();
+    };
+
+    form.addEventListener('submit', e => {
+      e.preventDefault();
+      const data = load();
+      data.unshift({
+        date: date.value,
+        category: category.value,
+        amount: amount.value,
+        desc: desc.value
+      });
+      save(data);
+      form.reset();
+      date.valueAsDate = new Date();
+      render();
+    });
+
+    clearAllBtn.addEventListener('click', () => {
+      if (!confirm('Hapus semua data?')) return;
+      save([]);
+      render();
+    });
+
+    date.valueAsDate = new Date();
+    render();
+
+    // Register Service Worker
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./service-worker.js');
+      });
+    }
+  </script>
+</body>
+</html>
