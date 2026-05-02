@@ -1,4 +1,5 @@
 :root {
+    color-scheme: dark;
     --bg-gradient: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
     --card-bg: rgba(255, 255, 255, 0.05);
     --card-border: rgba(255, 255, 255, 0.1);
@@ -107,6 +108,14 @@ input, select {
     font-size: 1rem;
     outline: none;
     transition: all 0.3s ease;
+    font-family: inherit;
+}
+
+input[type="date"] {
+    -webkit-appearance: none;
+    appearance: none;
+    min-height: 48px;
+    display: block;
 }
 
 input:focus, select:focus {
@@ -187,9 +196,16 @@ button {
 }
 
 .date-filters {
-    display: flex;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     gap: 15px;
     margin-bottom: 15px;
+}
+
+@media (max-width: 420px) {
+    .date-filters {
+        grid-template-columns: 1fr;
+    }
 }
 
 .input-group-filter {
